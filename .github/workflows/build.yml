@@ -20,12 +20,12 @@ jobs:
 
     # Restore NuGet packages
     - name: Restore NuGet packages
-      run: nuget restore "workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj"
+      run: nuget restore "Portable Firefox Updater.csproj"
 
     # Build & publish WinForms app
     - name: Build & Publish
       run: |
-        msbuild "workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj" `
+        msbuild "Portable Firefox Updater.csproj" `
           /t:Rebuild `
           /p:Configuration=Release `
           /p:Platform="Any CPU" `
