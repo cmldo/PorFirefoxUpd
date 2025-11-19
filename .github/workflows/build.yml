@@ -1,4 +1,4 @@
-name: Build Windows Desktop App
+name: Build WinForms App (Self-Contained)
 
 on:
   push:
@@ -11,25 +11,31 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout
+    - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Setup .NET
+    - name: Setup .NET SDK
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: "8.0.x"
 
-    - name: Restore
-      run: dotnet restore
+    - name: Restore dependencies
+      run: dotnet restore "/workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj"
 
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
+    - name: Build (Release)
+      run: dotnet build "/workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj" --configuration Release --no-restore
 
-    - name: Publish App
-      run: dotnet publish "Portable Firefox Updater.csproj" -c Release -o publish
+    - name: Publish WinForms App (Self-contained)
+      run: dotnet publish "/workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj" `
+           -c Release `
+           -o ./publish `
+           --runtime win-x64 `
+           --self-contained true `
+           /p:PublishSingleFile=true `
+           /p:PublishTrimmed=false
 
-    - name: Upload Artifact
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: windows-build
+        name: firefox-updater-selfcontained
         path: publish
