@@ -19,13 +19,14 @@ jobs:
         dotnet-version: "8.0.x"
 
     - name: Publish WinForms App (Self-contained)
-      run: dotnet publish "/workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj" `
-           -c Release `
-           -o ./publish `
-           --runtime win-x64 `
-           --self-contained true `
-           /p:PublishSingleFile=true `
-           /p:PublishTrimmed=false
+      run: |
+        dotnet publish "workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj" `
+          -c Release `
+          -o ./publish `
+          --runtime win-x64 `
+          --self-contained true `
+          /p:PublishSingleFile=true `
+          /p:PublishTrimmed=false
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
