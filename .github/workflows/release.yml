@@ -1,4 +1,4 @@
-name: Create Release
+name: Release Windows App
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout
       uses: actions/checkout@v3
 
     - name: Setup .NET
@@ -18,10 +18,10 @@ jobs:
       with:
         dotnet-version: "8.0.x"
 
-    - name: Publish application
-      run: dotnet publish YourProject.csproj -c Release -o ./publish --self-contained false
+    - name: Publish
+      run: dotnet publish "Portable Firefox Updater.csproj" -c Release -o publish
 
-    - name: Create GitHub Release
+    - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: publish/**
