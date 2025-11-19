@@ -28,7 +28,7 @@ jobs:
         msbuild "Portable Firefox Updater.csproj" `
           /t:Rebuild `
           /p:Configuration=Release `
-          /p:Platform="Any CPU" `
+          /p:Platform="x64" `
           /p:OutputPath=publish `
           /p:DeployOnBuild=true `
           /p:PublishSingleFile=true
