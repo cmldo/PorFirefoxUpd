@@ -1,4 +1,4 @@
-name: Release WinForms App (Self-Contained)
+name: Release WinForms App (.NET Framework)
 
 on:
   push:
@@ -13,20 +13,21 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: "8.0.x"
+    - name: Setup MSBuild path
+      uses: microsoft/setup-msbuild@v1
 
-    - name: Publish WinForms App (Self-contained)
+    - name: Restore NuGet packages
+      run: nuget restore "workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj"
+
+    - name: Build & Publish
       run: |
-        dotnet publish "Portable Firefox Updater.csproj" `
-          -c Release `
-          -o ./publish `
-          --runtime win-x64 `
-          --self-contained true `
-          /p:PublishSingleFile=true `
-          /p:PublishTrimmed=false
+        msbuild "workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj" `
+          /t:Rebuild `
+          /p:Configuration=Release `
+          /p:Platform="Any CPU" `
+          /p:OutputPath=publish `
+          /p:DeployOnBuild=true `
+          /p:PublishSingleFile=true
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
