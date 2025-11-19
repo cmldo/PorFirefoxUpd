@@ -35,6 +35,7 @@ namespace Firefox_Updater
         public Form1()
         {
             InitializeComponent();
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             if (File.Exists($"{applicationPath}\\Proxy.ini"))
             {
                 string proxyurl = File.ReadAllText($"{applicationPath}\\Proxy.ini");
