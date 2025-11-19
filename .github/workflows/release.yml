@@ -13,12 +13,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Setup MSBuild path
+    # Setup MSBuild
+    - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1
 
+    # Restore NuGet packages
     - name: Restore NuGet packages
       run: nuget restore "workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj"
 
+    # Build & publish WinForms app
     - name: Build & Publish
       run: |
         msbuild "workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj" `
@@ -29,6 +32,7 @@ jobs:
           /p:DeployOnBuild=true `
           /p:PublishSingleFile=true
 
+    # Create GitHub release and attach EXE
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:

@@ -1,4 +1,4 @@
-name: Build WinForms App (.NET Framework Self-Contained)
+name: Build WinForms App (.NET Framework)
 
 on:
   push:
@@ -14,14 +14,16 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # Use Visual Studio's MSBuild
-    - name: Setup MSBuild path
+    # Setup MSBuild from Visual Studio
+    - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1
 
+    # Restore NuGet packages
     - name: Restore NuGet packages
       run: nuget restore "workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj"
 
-    - name: Build using MSBuild
+    # Build & publish WinForms app
+    - name: Build & Publish
       run: |
         msbuild "workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj" `
           /t:Rebuild `
@@ -30,3 +32,10 @@ jobs:
           /p:OutputPath=publish `
           /p:DeployOnBuild=true `
           /p:PublishSingleFile=true
+
+    # Upload artifact for download
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: firefox-updater
+        path: publish
