@@ -75,7 +75,7 @@ namespace Firefox_Updater
             catch (Exception ex)
             {
                 MessageBox.Show("Error: \n\r" + ex.Message);
-                Environment.Exit(255);
+                //Environment.Exit(255);
             }
 
             label6.Text = buildversion[0];
