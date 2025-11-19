@@ -20,7 +20,7 @@ jobs:
 
     - name: Publish WinForms App (Self-contained)
       run: |
-        dotnet publish "workspaces/PorFirefoxUpd/Portable Firefox Updater.csproj" `
+        dotnet publish "Portable Firefox Updater.csproj" `
           -c Release `
           -o ./publish `
           --runtime win-x64 `
