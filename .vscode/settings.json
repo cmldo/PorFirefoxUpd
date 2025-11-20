@@ -1,4 +1,31 @@
 {
-    "dotnet.preferCSharpExtension": true,
-    "dotnet.defaultSolution": "Portable Firefox Updater.sln"
+  // Disable OmniSharp loading .NET Framework projects (causes all your warnings)
+  "omnisharp.useModernNet": false,
+  "omnisharp.useGlobalMono": "never",
+  "omnisharp.enableMsBuildLoadProjectsOnDemand": false,
+  "omnisharp.msbuildLoadProjectsOnDemand": false,
+
+  // Do not attempt to use Roslyn analyzers or project system
+  "omnisharp.enableEditorConfigSupport": false,
+  "omnisharp.enableRoslynAnalyzers": false,
+  "omnisharp.disableCodeActions": true,
+  "omnisharp.disableAnalyzersSupport": true,
+
+  // Completely silence OmniSharp logging
+  "omnisharp.loggingLevel": "none",
+
+  // Hide diagnostics from the Problems panel
+  "problems.showCurrentInStatus": false,
+  "problems.decorations.enabled": false,
+  "editor.showUnused": false,
+
+  // Do not attempt SDK checks
+  "dotnet.checkForSdkUpdates": false,
+
+  // Prevent VS Code from reporting SDK/project load errors
+  "csharp.suppressDotnetRestoreNotification": true,
+  "csharp.suppressProjectJsonWarning": true,
+
+  // Disable automatic project loading (causes spurious warnings)
+  "csharp.extensions.showProjectLoadedNotification": false
 }
