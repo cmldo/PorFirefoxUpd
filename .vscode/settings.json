@@ -27,5 +27,7 @@
   "csharp.suppressProjectJsonWarning": true,
 
   // Disable automatic project loading (causes spurious warnings)
-  "csharp.extensions.showProjectLoadedNotification": false
+  "csharp.extensions.showProjectLoadedNotification": false,
+  "dotnet.preferCSharpExtension": true,
+  "dotnet.defaultSolution": "Portable Firefox Updater.sln"
 }
