@@ -1,11 +1,20 @@
 name: Release WinForms App (.NET Framework)
 
 on:
-  workflow_dispatch:   # <- allows manual triggering
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build'
+        required: true
+        default: 'main'
+      configuration:
+        description: 'Build configuration'
+        required: true
+        default: 'Release'
+      platform:
+        description: 'Target platform'
+        required: true
+        default: 'x64'
 
 jobs:
   release:
@@ -14,6 +23,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.inputs.branch }}
 
     # Setup MSBuild
     - name: Setup MSBuild
@@ -28,8 +39,8 @@ jobs:
       run: |
         msbuild "Portable Firefox Updater.csproj" `
           /t:Rebuild `
-          /p:Configuration=Release `
-          /p:Platform="x64" `
+          /p:Configuration=${{ github.event.inputs.configuration }} `
+          /p:Platform="${{ github.event.inputs.platform }}" `
           /p:OutputPath=publish `
           /p:DeployOnBuild=true `
           /p:PublishSingleFile=true
@@ -39,5 +50,3 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: publish/**
-
-
