@@ -4,61 +4,93 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for the release'
-        required: true
+        description: 'Tag for the release (leave empty to use latest)'
+        required: false
 
 jobs:
   release:
     runs-on: windows-2025
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0 # needed to push tags
 
+      # 2️⃣ Set up MSBuild
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v1
 
-      - name: Configure Git for tag creation
+      # 3️⃣ Configure Git
+      - name: Configure Git
         shell: pwsh
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      - name: Check and create tag if missing
+      # 4️⃣ Determine tag
+      - name: Determine tag to use
+        id: tag
         shell: pwsh
         run: |
-          $TAG = '${{ github.event.inputs.tag }}'
-          Write-Host "Checking if tag $TAG exists..."
-          $exists = git rev-parse $TAG 2>$null
-          if ($exists) {
-              Write-Host "Tag $TAG already exists"
+          $inputTag = '${{ github.event.inputs.tag }}'.Trim()
+          if (-not $inputTag) {
+              Write-Host "No tag input provided. Using latest Git tag..."
+              $latestTag = git describe --tags --abbrev=0
+              if (-not $latestTag) {
+                  Write-Error "No tags found in repository."
+                  exit 1
+              }
+              $TAG = $latestTag
           } else {
-              Write-Host "Tag $TAG does not exist. Creating it..."
-              git tag $TAG
-              git push origin $TAG
+              $TAG = $inputTag
+          }
+          Write-Host "Using tag: $TAG"
+          echo "TAG=$TAG" >> $env:GITHUB_ENV
+
+      # 5️⃣ Check and create tag if missing
+      - name: Check and create tag
+        shell: pwsh
+        run: |
+          $TAG = $env:TAG
+          Write-Host "Checking if tag '$TAG' exists..."
+          $exists = git show-ref --tags $TAG
+          if ($exists) {
+              Write-Host "Tag '$TAG' already exists"
+          } else {
+              Write-Host "Tag '$TAG' does not exist. Creating it..."
+              git tag "$TAG"
+              git push origin "$TAG"
           }
 
+      # 6️⃣ Build the solution
       - name: Build project
         shell: pwsh
         run: |
-          msbuild ".\Portable Firefox Updater.sln" /p:Configuration=Release
+          $solutionPath = Join-Path $PWD "PorFirefoxUpd\Portable Firefox Updater.sln"
+          if (-Not (Test-Path $solutionPath)) {
+              Write-Error "Solution file not found at $solutionPath"
+              exit 1
+          }
+          msbuild "$solutionPath" /p:Configuration=Release
 
-      - name: Copy build output
+      # 7️⃣ Copy build output
+      - name: Prepare publish folder
         shell: pwsh
         run: |
-          $publishDir = "$PWD\publish"
+          $publishDir = Join-Path $PWD "publish"
           if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
           New-Item -ItemType Directory -Path $publishDir
-          Copy-Item ".\PorFirefoxUpd\bin\Release\*" $publishDir -Recurse
+          $buildOutput = Join-Path $PWD "PorFirefoxUpd\bin\Release\*"
+          Copy-Item -Path $buildOutput -Destination $publishDir -Recurse -Force
 
+      # 8️⃣ Create GitHub Release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.event.inputs.tag }}
-          name: Release ${{ github.event.inputs.tag }}
+          tag_name: ${{ env.TAG }}
+          name: Release ${{ env.TAG }}
           files: publish/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
