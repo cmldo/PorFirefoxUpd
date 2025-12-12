@@ -29,8 +29,8 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      # 4️⃣ Determine tag
-      - name: Determine tag to use
+      # 4️⃣ Determine tag to use
+      - name: Determine tag
         id: tag
         shell: pwsh
         run: |
@@ -39,10 +39,11 @@ jobs:
               Write-Host "No tag input provided. Using latest Git tag..."
               $latestTag = git describe --tags --abbrev=0
               if (-not $latestTag) {
-                  Write-Error "No tags found in repository."
-                  exit 1
+                  Write-Host "No tags found, using 'v0.0.1' as default"
+                  $TAG = "v0.0.1"
+              } else {
+                  $TAG = $latestTag
               }
-              $TAG = $latestTag
           } else {
               $TAG = $inputTag
           }
@@ -64,26 +65,38 @@ jobs:
               git push origin "$TAG"
           }
 
-      # 6️⃣ Build the solution
+      # 6️⃣ Build the solution (auto-detect .sln)
       - name: Build project
         shell: pwsh
         run: |
-          $solutionPath = Join-Path $PWD "PorFirefoxUpd\Portable Firefox Updater.sln"
-          if (-Not (Test-Path $solutionPath)) {
-              Write-Error "Solution file not found at $solutionPath"
+          Write-Host "Searching for solution file..."
+          $solutionFiles = Get-ChildItem -Path $PWD -Recurse -Filter "*.sln"
+          if ($solutionFiles.Count -eq 0) {
+              Write-Error "No solution file found in repository"
               exit 1
+          } elseif ($solutionFiles.Count -gt 1) {
+              Write-Host "Multiple solution files found, using first:"
+              $solutionFiles | ForEach-Object { Write-Host $_.FullName }
           }
+          $solutionPath = $solutionFiles[0].FullName
+          Write-Host "Building solution: $solutionPath"
           msbuild "$solutionPath" /p:Configuration=Release
 
-      # 7️⃣ Copy build output
+      # 7️⃣ Prepare publish folder
       - name: Prepare publish folder
         shell: pwsh
         run: |
           $publishDir = Join-Path $PWD "publish"
           if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
           New-Item -ItemType Directory -Path $publishDir
-          $buildOutput = Join-Path $PWD "PorFirefoxUpd\bin\Release\*"
-          Copy-Item -Path $buildOutput -Destination $publishDir -Recurse -Force
+
+          # Copy all build outputs (assuming bin\Release)
+          $buildDirs = Get-ChildItem -Path $PWD -Recurse -Directory | Where-Object { $_.FullName -match "bin\\Release" }
+          if ($buildDirs.Count -eq 0) { Write-Error "No build output found in bin\Release"; exit 1 }
+
+          foreach ($dir in $buildDirs) {
+              Copy-Item -Path "$($dir.FullName)\*" -Destination $publishDir -Recurse -Force
+          }
 
       # 8️⃣ Create GitHub Release
       - name: Create GitHub Release
