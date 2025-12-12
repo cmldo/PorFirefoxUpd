@@ -1,73 +1,76 @@
-name: Release
+name: Build and Release PorFirefoxUpd
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag (optional, will auto-generate if empty)'
-        required: false
 
 jobs:
-  release:
-    runs-on: windows-2025
+  build-and-release:
+    runs-on: windows-latest
+    env:
+      TAG_PREFIX: v
 
     steps:
+      # 1. Checkout code
       - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Needed for tags
+        uses: actions/checkout@v4
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1
+      # 2. Detect solution file dynamically
+      - name: Detect solution file
+        id: detect_sln
+        run: |
+          $sln = Get-ChildItem -Path $PWD -Filter *.sln -Recurse | Select-Object -First 1
+          if (-not $sln) { throw "No solution file found" }
+          echo "SOLUTION_PATH=$($sln.FullName)" >> $env:GITHUB_ENV
+          Write-Host "Detected solution: $($sln.FullName)"
 
-      - name: Determine Tag
+      # 3. Determine tag
+      - name: Determine release tag
         id: tag
         shell: pwsh
         run: |
-          if ([string]::IsNullOrWhiteSpace("${{ github.event.inputs.tag }}")) {
-              $TAG = "v$(Get-Date -Format 'yyyyMMddHHmmss')"
+          $dateTag = Get-Date -Format "yyyyMMddHHmmss"
+          $tagName = "${env:TAG_PREFIX}$dateTag"
+          # Create tag if it doesn't exist
+          if (-not (git rev-parse $tagName 2>$null)) {
+              git config user.name "github-actions"
+              git config user.email "github-actions@github.com"
+              git tag $tagName
+              git push origin $tagName
+              Write-Host "Created tag $tagName"
           } else {
-              $TAG = "${{ github.event.inputs.tag }}"
+              Write-Host "Tag $tagName already exists"
           }
-          Write-Host "Using tag: $TAG"
+          echo "RELEASE_TAG=$tagName" >> $env:GITHUB_ENV
 
-          # Check if tag exists
-          $tagExists = git tag --list $TAG
-          if (-not $tagExists) {
-              git tag $TAG
-              git push origin $TAG
-              Write-Host "Tag $TAG created and pushed"
-          } else {
-              Write-Host "Tag $TAG already exists"
-          }
-
-          echo "tag=$TAG" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
-
-      - name: Find solution
-        shell: pwsh
-        run: |
-          $sln = Get-ChildItem -Path $PWD -Filter *.sln -Recurse | Select-Object -First 1
-          if (-not $sln) { throw "No solution file found!" }
-          Write-Host "Solution found at: $($sln.FullName)"
-          echo "SOLUTION_PATH=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
-
-      - name: Build solution
-        shell: pwsh
-        run: |
-          msbuild $env:SOLUTION_PATH /p:Configuration=Release
-
-      - name: Publish artifacts
+      # 4. Build solution and copy outputs
+      - name: Build and publish
         shell: pwsh
         run: |
           $publishDir = "$PWD\publish"
-          if (-Not (Test-Path $publishDir)) { New-Item -ItemType Directory -Path $publishDir }
-          # Assuming your project has a Publish target; adjust if needed
-          msbuild $env:SOLUTION_PATH /p:Configuration=Release /p:DeployOnBuild=true /p:PublishDir=$publishDir
+          if (Test-Path $publishDir) { Remove-Item -Recurse -Force $publishDir }
+          New-Item -ItemType Directory -Path $publishDir
 
+          # Build solution
+          msbuild $env:SOLUTION_PATH /p:Configuration=Release
+
+          # Copy EXE and DLLs
+          $outputs = Get-ChildItem -Path $PWD -Recurse -Include *.exe,*.dll | Where-Object { $_.FullName -like "*\bin\Release\*" }
+          foreach ($file in $outputs) {
+              Copy-Item $file.FullName -Destination $publishDir
+          }
+
+          # Copy 7zr.exe if exists
+          if (Test-Path "$PWD\7zr.exe") {
+              Copy-Item "$PWD\7zr.exe" -Destination $publishDir
+          }
+
+          Write-Host "Files published to $publishDir"
+
+      # 5. Create GitHub Release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.tag }}
           files: publish/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ env.RELEASE_TAG }}
