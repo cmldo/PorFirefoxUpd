@@ -1204,7 +1204,7 @@ private void Download7zrIfMissing()
             }
         }
         
-private async void VersionInfo_Click(object sender, EventArgs e)
+private void VersionInfo_Click(object sender, EventArgs e)
 {
     try
     {
@@ -1219,10 +1219,9 @@ private async void VersionInfo_Click(object sender, EventArgs e)
         {
             Directory.CreateDirectory(launcherFolder);
 
-            using (HttpClient client = new HttpClient())
+            using (WebClient client = new WebClient())
             {
-                var data = await client.GetByteArrayAsync(downloadUrl);
-                await File.WriteAllBytesAsync(launcherArchive, data);
+                client.DownloadFile(downloadUrl, launcherArchive);
             }
 
             // Extract using 7zr.exe
@@ -1244,7 +1243,7 @@ private async void VersionInfo_Click(object sender, EventArgs e)
             var proc = Process.Start(psi);
             proc.WaitForExit();
 
-            File.Delete(launcherArchive); // optional: cleanup
+            File.Delete(launcherArchive); // cleanup
         }
 
         // Check updater file exists
