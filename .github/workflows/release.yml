@@ -37,7 +37,7 @@ jobs:
           $inputTag = '${{ github.event.inputs.tag }}'.Trim()
           if (-not $inputTag) {
               Write-Host "No tag input provided. Using latest Git tag..."
-              $latestTag = git describe --tags --abbrev=0
+              $latestTag = git describe --tags --abbrev=0 2>$null
               if (-not $latestTag) {
                   Write-Host "No tags found, using 'v0.0.1' as default"
                   $TAG = "v0.0.1"
@@ -82,7 +82,7 @@ jobs:
           Write-Host "Building solution: $solutionPath"
           msbuild "$solutionPath" /p:Configuration=Release
 
-      # 7️⃣ Prepare publish folder
+      # 7️⃣ Prepare publish folder with correct exe name
       - name: Prepare publish folder
         shell: pwsh
         run: |
@@ -90,13 +90,13 @@ jobs:
           if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
           New-Item -ItemType Directory -Path $publishDir
 
-          # Copy all build outputs (assuming bin\Release)
-          $buildDirs = Get-ChildItem -Path $PWD -Recurse -Directory | Where-Object { $_.FullName -match "bin\\Release" }
-          if ($buildDirs.Count -eq 0) { Write-Error "No build output found in bin\Release"; exit 1 }
+          # Copy only the exe matching AssemblyName
+          $exeName = "Portable Firefox Updater.exe"
+          $exePath = Get-ChildItem -Path $PWD -Recurse -File -Filter $exeName | Select-Object -First 1
+          if (-not $exePath) { Write-Error "Build output $exeName not found"; exit 1 }
 
-          foreach ($dir in $buildDirs) {
-              Copy-Item -Path "$($dir.FullName)\*" -Destination $publishDir -Recurse -Force
-          }
+          Copy-Item -Path $exePath.FullName -Destination $publishDir -Force
+          Write-Host "Copied $exeName to publish folder"
 
       # 8️⃣ Create GitHub Release
       - name: Create GitHub Release
