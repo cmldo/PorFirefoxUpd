@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Globalization;
 using System.Collections.Generic;
-using System.Net.Http;
 
 namespace Firefox_Updater
 {
@@ -590,36 +589,35 @@ namespace Firefox_Updater
             }
         }
 
-        private void Download7zrIfMissing()
+    private const string SevenZrUrl = "https://www.7-zip.org/a/7zr.exe";
+    private const string SevenZrFileName = "7zr.exe";
+
+    public static void Download7zrIfMissing()
+    {
+        string currentDir = AppDomain.CurrentDomain.BaseDirectory;
+        string exePath = Path.Combine(currentDir, SevenZrFileName);
+
+        if (File.Exists(exePath))
         {
-            string exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "7zr.exe");
-
-            if (!File.Exists(exePath))
-            {
-                try
-                {
-                    // Using HttpClient in .NET Framework 4.8
-                    using (var client = new HttpClient())
-                    {
-                        // Synchronously download the file
-                        var response = client.GetAsync("https://www.7-zip.org/a/7zr.exe").Result;
-                        response.EnsureSuccessStatusCode();
-                        byte[] bytes = response.Content.ReadAsByteArrayAsync().Result;
-
-                        File.WriteAllBytes(exePath, bytes);
-                        MessageBox.Show("7zr.exe downloaded successfully!", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Failed to download 7zr.exe: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-            else
-            {
-                MessageBox.Show("7zr.exe already exists.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
+            // Already exists, nothing to do
+            return;
         }
+
+        try
+        {
+            using (var wc = new WebClient())
+            {
+                // Optionally, show progress via events
+                wc.DownloadFile(SevenZrUrl, exePath);
+            }
+
+            MessageBox.Show($"{SevenZrFileName} downloaded successfully!", "Download Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to download {SevenZrFileName}:\n{ex.Message}", "Download Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
         
         public void Message1()
         {
