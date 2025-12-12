@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # needed to push tags
+          fetch-depth: 0
 
       # 2️⃣ Set up MSBuild
       - name: Set up MSBuild
@@ -29,7 +29,7 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      # 4️⃣ Determine tag to use
+      # 4️⃣ Determine tag
       - name: Determine tag
         id: tag
         shell: pwsh
@@ -63,26 +63,19 @@ jobs:
               Write-Host "Tag '$TAG' does not exist. Creating it..."
               git tag "$TAG"
               git push origin "$TAG"
-          }
 
-      # 6️⃣ Build the solution (auto-detect .sln)
+      # 6️⃣ Build the solution
       - name: Build project
         shell: pwsh
         run: |
           Write-Host "Searching for solution file..."
           $solutionFiles = Get-ChildItem -Path $PWD -Recurse -Filter "*.sln"
-          if ($solutionFiles.Count -eq 0) {
-              Write-Error "No solution file found in repository"
-              exit 1
-          } elseif ($solutionFiles.Count -gt 1) {
-              Write-Host "Multiple solution files found, using first:"
-              $solutionFiles | ForEach-Object { Write-Host $_.FullName }
-          }
+          if ($solutionFiles.Count -eq 0) { Write-Error "No solution file found"; exit 1 }
           $solutionPath = $solutionFiles[0].FullName
           Write-Host "Building solution: $solutionPath"
           msbuild "$solutionPath" /p:Configuration=Release
 
-      # 7️⃣ Prepare publish folder and ensure correct exe name
+      # 7️⃣ Prepare publish folder
       - name: Prepare publish folder
         shell: pwsh
         run: |
@@ -90,19 +83,29 @@ jobs:
           if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
           New-Item -ItemType Directory -Path $publishDir
 
-          # Copy the main exe from bin\Release
           $exePath = Join-Path $PWD "bin\Release\Portable Firefox Updater.exe"
-          if (-not (Test-Path $exePath)) { Write-Error "Build output not found: $exePath"; exit 1 }
+          if (-not (Test-Path $exePath)) { Write-Error "Build output not found"; exit 1 }
 
+          # Copy exe to publish folder
           Copy-Item -Path $exePath -Destination $publishDir -Force
           Write-Host "Copied Portable Firefox Updater.exe to publish folder"
 
-      # 8️⃣ Create GitHub Release
+      # 8️⃣ Zip the exe
+      - name: Zip release
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $PWD "publish"
+          $zipPath = Join-Path $PWD "Portable_Firefox_Updater.zip"
+          if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+          Compress-Archive -Path "$publishDir\*" -DestinationPath $zipPath -Force
+          Write-Host "Created zip: $zipPath"
+
+      # 9️⃣ Create GitHub Release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.TAG }}
           name: Release ${{ env.TAG }}
-          files: publish/**
+          files: Portable_Firefox_Updater.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
