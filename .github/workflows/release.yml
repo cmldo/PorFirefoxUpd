@@ -82,7 +82,7 @@ jobs:
           Write-Host "Building solution: $solutionPath"
           msbuild "$solutionPath" /p:Configuration=Release
 
-      # 7️⃣ Prepare publish folder with correct exe
+      # 7️⃣ Prepare publish folder and ensure correct exe name
       - name: Prepare publish folder
         shell: pwsh
         run: |
