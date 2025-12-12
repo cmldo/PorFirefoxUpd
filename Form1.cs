@@ -588,31 +588,34 @@ namespace Firefox_Updater
     private const string SevenZrUrl = "https://www.7-zip.org/a/7zr.exe";
     private const string SevenZrFileName = "7zr.exe";
 
-    public static void Download7zrIfMissing()
+public static void Download7zrIfMissing()
+{
+    string currentDir = Application.StartupPath;
+    string exePath = Path.Combine(currentDir, "Bin", SevenZrFileName);
+
+    // Ensure the Bin directory exists
+    var binDir = Path.GetDirectoryName(exePath);
+    if (!string.IsNullOrEmpty(binDir))
+        Directory.CreateDirectory(binDir);
+
+    if (File.Exists(exePath))
+        return; // Already exists
+
+    try
     {
-        string currentDir = Application.StartupPath;
-        string exePath = Path.Combine($"{currentDir}\\Bin", SevenZrFileName);
-
-        // Ensure the Bin directory exists
-        Directory.CreateDirectory(Path.GetDirectoryName(exePath)!);
-
-        if (File.Exists(exePath))
-            return; // Already exists
-
-        try
+        using (var wc = new WebClient())
         {
-            using (var wc = new WebClient())
-            {
-                wc.DownloadFile(SevenZrUrl, exePath);
-            }
+            wc.DownloadFile(SevenZrUrl, exePath);
+        }
 
-            MessageBox.Show($"{SevenZrFileName} downloaded successfully to Bin!", "Download Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Failed to download {SevenZrFileName}:\n{ex.Message}", "Download Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
+        MessageBox.Show($"{SevenZrFileName} downloaded successfully to Bin!", "Download Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
+    catch (Exception ex)
+    {
+        MessageBox.Show($"Failed to download {SevenZrFileName}:\n{ex.Message}", "Download Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+}
+
         
         public void Message1()
         {
