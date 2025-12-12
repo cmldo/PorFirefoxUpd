@@ -3,50 +3,61 @@ name: Release WinForms App (.NET Framework)
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to build'
+      tag:
+        description: 'Git tag for the release (will be created if missing)'
         required: true
-        default: 'main'
-      configuration:
-        description: 'Build configuration'
-        required: true
-        default: 'Release'
-      platform:
-        description: 'Target platform'
-        required: true
-        default: 'x64'
 
 jobs:
   release:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.inputs.branch }}
+      # 1️⃣ Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # fetch all tags
 
-    # Setup MSBuild
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1
+      # 2️⃣ Setup Git author info (needed to create tag)
+      - name: Setup Git user
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
 
-    # Restore NuGet packages
-    - name: Restore NuGet packages
-      run: nuget restore "Portable Firefox Updater.csproj"
+      # 3️⃣ Check if tag exists and create if missing
+      - name: Create tag if missing
+        run: |
+          TAG=${{ github.event.inputs.tag }}
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+          else
+            echo "Tag $TAG does not exist. Creating it..."
+            git tag $TAG
+            git push origin $TAG
+          fi
 
-    # Build & publish WinForms app
-    - name: Build & Publish
-      run: |
-        msbuild "Portable Firefox Updater.csproj" `
-          /t:Rebuild `
-          /p:Configuration=${{ github.event.inputs.configuration }} `
-          /p:Platform="${{ github.event.inputs.platform }}" `
-          /p:OutputPath=publish `
-          /p:DeployOnBuild=true `
-          /p:PublishSingleFile=true
+      # 4️⃣ Setup MSBuild
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
 
-    # Create GitHub release and attach EXE
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: publish/**
+      # 5️⃣ Restore NuGet packages
+      - name: Restore NuGet packages
+        run: nuget restore "Portable Firefox Updater.csproj"
+
+      # 6️⃣ Build & publish WinForms app
+      - name: Build & Publish
+        run: |
+          msbuild "Portable Firefox Updater.csproj" `
+            /t:Rebuild `
+            /p:Configuration=Release `
+            /p:Platform="x64" `
+            /p:OutputPath=publish `
+            /p:DeployOnBuild=true `
+            /p:PublishSingleFile=true
+
+      # 7️⃣ Create GitHub release and attach EXE
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          files: publish/**
