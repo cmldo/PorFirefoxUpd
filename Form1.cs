@@ -585,37 +585,43 @@ namespace Firefox_Updater
             }
         }
 
-    private const string SevenZrUrl = "https://www.7-zip.org/a/7zr.exe";
-    private const string SevenZrFileName = "7zr.exe";
-
-public static void Download7zrIfMissing()
+private void Download7zrIfMissing()
 {
+    const string SevenZrFileName = "7zr.exe";
     string currentDir = Application.StartupPath;
-    string exePath = Path.Combine(currentDir, "Bin", SevenZrFileName);
-
-    // Ensure the Bin directory exists
-    var binDir = Path.GetDirectoryName(exePath);
-    if (!string.IsNullOrEmpty(binDir))
-        Directory.CreateDirectory(binDir);
-
-    if (File.Exists(exePath))
-        return; // Already exists
+    string binDir = Path.Combine(currentDir, "Bin");
+    string exePath = Path.Combine(binDir, SevenZrFileName);
 
     try
     {
-        using (var wc = new WebClient())
+        // Ensure Bin folder exists
+        if (!Directory.Exists(binDir))
         {
-            wc.DownloadFile(SevenZrUrl, exePath);
+            Directory.CreateDirectory(binDir);
         }
 
-        MessageBox.Show($"{SevenZrFileName} downloaded successfully to Bin!", "Download Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        // Check if 7zr.exe already exists
+        if (File.Exists(exePath))
+        {
+            // Already present, no need to download
+            return;
+        }
+
+        // URL to download from
+        string downloadUrl = "https://www.7-zip.org/a/7zr.exe";
+
+        using (var client = new System.Net.WebClient())
+        {
+            client.DownloadFile(downloadUrl, exePath);
+        }
+
+        MessageBox.Show("7zr.exe downloaded successfully.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
     catch (Exception ex)
     {
-        MessageBox.Show($"Failed to download {SevenZrFileName}:\n{ex.Message}", "Download Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        MessageBox.Show("Failed to download 7zr.exe: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 }
-
         
         public void Message1()
         {
