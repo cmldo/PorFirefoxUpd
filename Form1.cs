@@ -507,7 +507,7 @@ namespace Firefox_Updater
                             (args.TotalBytesToReceive / 1024d / 1024d).ToString("0.00"));
                         percLabel.Text = args.ProgressPercentage.ToString() + "%";
                     };
-                    myWebClient.DownloadFileCompleted += (o, args) =>
+                    myWebClient.DownloadFileCompleted += async (o, args) =>
                     {
                         if (args.Error != null)
                         {
@@ -599,7 +599,7 @@ private async Task Ensure7zrAsync()
     using (var client = new HttpClient())
     {
         var data = await client.GetByteArrayAsync("https://www.7-zip.org/a/7zr.exe");
-        await File.WriteAllBytesAsync(sevenZip, data);
+        File.WriteAllBytes(sevenZip, data);  // sync version for .NET 4.8
     }
 }
         
