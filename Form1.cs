@@ -593,21 +593,20 @@ namespace Firefox_Updater
         string currentDir = Application.StartupPath;
         string exePath = Path.Combine($"{currentDir}\\Bin", SevenZrFileName);
 
+        // Ensure the Bin directory exists
+        Directory.CreateDirectory(Path.GetDirectoryName(exePath)!);
+
         if (File.Exists(exePath))
-        {
-            // Already exists, nothing to do
-            return;
-        }
+            return; // Already exists
 
         try
         {
             using (var wc = new WebClient())
             {
-                // Optionally, show progress via events
                 wc.DownloadFile(SevenZrUrl, exePath);
             }
 
-            MessageBox.Show($"{SevenZrFileName} downloaded successfully!", "Download Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show($"{SevenZrFileName} downloaded successfully to Bin!", "Download Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {
