@@ -82,7 +82,7 @@ jobs:
           Write-Host "Building solution: $solutionPath"
           msbuild "$solutionPath" /p:Configuration=Release
 
-      # 7️⃣ Prepare publish folder with correct exe name
+      # 7️⃣ Prepare publish folder with correct exe
       - name: Prepare publish folder
         shell: pwsh
         run: |
@@ -90,13 +90,12 @@ jobs:
           if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
           New-Item -ItemType Directory -Path $publishDir
 
-          # Copy only the exe matching AssemblyName
-          $exeName = "Portable Firefox Updater.exe"
-          $exePath = Get-ChildItem -Path $PWD -Recurse -File -Filter $exeName | Select-Object -First 1
-          if (-not $exePath) { Write-Error "Build output $exeName not found"; exit 1 }
+          # Copy the main exe from bin\Release
+          $exePath = Join-Path $PWD "bin\Release\Portable Firefox Updater.exe"
+          if (-not (Test-Path $exePath)) { Write-Error "Build output not found: $exePath"; exit 1 }
 
-          Copy-Item -Path $exePath.FullName -Destination $publishDir -Force
-          Write-Host "Copied $exeName to publish folder"
+          Copy-Item -Path $exePath -Destination $publishDir -Force
+          Write-Host "Copied Portable Firefox Updater.exe to publish folder"
 
       # 8️⃣ Create GitHub Release
       - name: Create GitHub Release
