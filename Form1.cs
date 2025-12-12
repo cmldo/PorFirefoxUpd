@@ -37,6 +37,9 @@ namespace Firefox_Updater
             InitializeComponent();
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             Download7zrIfMissing();
+            // Call version check at startup
+            VersionInfo_Click(null, EventArgs.Empty);
+            
             if (File.Exists($"{applicationPath}\\Proxy.ini"))
             {
                 string proxyurl = File.ReadAllText($"{applicationPath}\\Proxy.ini");
