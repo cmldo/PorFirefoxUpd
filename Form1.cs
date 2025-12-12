@@ -595,7 +595,7 @@ namespace Firefox_Updater
 
     public static void Download7zrIfMissing()
     {
-        string currentDir = AppDomain.CurrentDomain.BaseDirectory;
+        string currentDir = Application.StartupPath;
         string exePath = Path.Combine(currentDir, SevenZrFileName);
 
         if (File.Exists(exePath))
