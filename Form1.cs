@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Globalization;
 using System.Collections.Generic;
+using System.Net.Http;
 
 namespace Firefox_Updater
 {
