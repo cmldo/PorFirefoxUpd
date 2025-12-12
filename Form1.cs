@@ -35,7 +35,6 @@ namespace Firefox_Updater
         public Form1()
         {
             InitializeComponent();
-            this.Load += Form1_Load; // Wire up Form1_Load
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             if (File.Exists($"{applicationPath}\\Proxy.ini"))
             {
@@ -167,12 +166,6 @@ namespace Firefox_Updater
                 }
             }
             _ = TestCheck();
-        }
-        
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            // Call the check on form load
-            Download7zrIfMissing();
         }
         
         private async Task TestCheck()
@@ -525,6 +518,7 @@ namespace Firefox_Updater
                         {
                             downloadLabel.Text = Langfile.Texts("downUnpstart");
                             string arguments = $" x \"{applicationPath}\\Firefox_{ring2[c]}_{buildversion[c]}_{architektur[a]}_{lang[comboIndex]}.exe\" -o\"{applicationPath}\\Update\\{entpDir[b]}\" -y";
+                            Download7zrIfMissing();
                             Process process = new Process();
                             process.StartInfo.FileName = $"{applicationPath}\\Bin\\7zr.exe";
                             process.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
