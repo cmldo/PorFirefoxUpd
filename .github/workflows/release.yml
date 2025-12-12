@@ -60,9 +60,10 @@ jobs:
           if ($exists) {
               Write-Host "Tag '$TAG' already exists"
           } else {
-              Write-Host "Tag '$TAG' does not exist. Creating it..."
-              git tag "$TAG"
-              git push origin "$TAG"
+            Write-Host "Tag '$TAG' does not exist. Creating it..."
+            git tag "$TAG"
+            git push origin "$TAG"
+          }
 
       # 6️⃣ Build the solution
       - name: Build project
@@ -109,3 +110,4 @@ jobs:
           files: Portable_Firefox_Updater.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
