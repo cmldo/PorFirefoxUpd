@@ -1203,12 +1203,70 @@ private void Download7zrIfMissing()
 
             }
         }
-        private void VersionInfo_Click(object sender, EventArgs e)
+        
+private async void VersionInfo_Click(object sender, EventArgs e)
+{
+    try
+    {
+        string updaterPath = Path.Combine(applicationPath, "Portable Firefox Updater.exe");
+        string launcherPath = Path.Combine(applicationPath, "Bin", "Launcher", "Firefox Launcher.exe");
+        string launcherFolder = Path.GetDirectoryName(launcherPath);
+        string launcherArchive = Path.Combine(Directory.GetCurrentDirectory(), "Launcher.7z");
+        string downloadUrl = "https://github.com/UndertakerBen/PorFirefoxUpd/raw/master/Launcher/Launcher.7z";
+
+        // Ensure launcher exists
+        if (!File.Exists(launcherPath))
         {
-            Version updVersion = new Version(FileVersionInfo.GetVersionInfo($"{applicationPath}\\Portable Firefox Updater.exe").FileVersion);
-            Version launcherVersion = new Version(FileVersionInfo.GetVersionInfo($"{applicationPath}\\Bin\\Launcher\\Firefox Launcher.exe").FileVersion);
-            MessageBox.Show($"Updater Version - {updVersion}\r\nLauncher Version - {launcherVersion}", "Version Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Directory.CreateDirectory(launcherFolder);
+
+            using (HttpClient client = new HttpClient())
+            {
+                var data = await client.GetByteArrayAsync(downloadUrl);
+                await File.WriteAllBytesAsync(launcherArchive, data);
+            }
+
+            // Extract using 7zr.exe
+            string sevenZipPath = Path.Combine(Directory.GetCurrentDirectory(), "7zr.exe");
+            if (!File.Exists(sevenZipPath))
+            {
+                MessageBox.Show("7zr.exe is missing in the current directory.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                FileName = sevenZipPath,
+                Arguments = $"x \"{launcherArchive}\" -o\"{launcherFolder}\" -y",
+                CreateNoWindow = true,
+                UseShellExecute = false
+            };
+
+            var proc = Process.Start(psi);
+            proc.WaitForExit();
+
+            File.Delete(launcherArchive); // optional: cleanup
         }
+
+        // Check updater file exists
+        if (!File.Exists(updaterPath))
+        {
+            MessageBox.Show("Updater executable missing.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        // Get versions
+        Version updVersion = new Version(FileVersionInfo.GetVersionInfo(updaterPath).FileVersion);
+        Version launcherVersion = new Version(FileVersionInfo.GetVersionInfo(launcherPath).FileVersion);
+
+        MessageBox.Show($"Updater Version - {updVersion}\r\nLauncher Version - {launcherVersion}",
+                        "Version Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+}
+
         private void RegistrierenToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             Regfile.RegCreate(applicationPath, instDir[10]);
