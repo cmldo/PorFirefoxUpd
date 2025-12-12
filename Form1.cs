@@ -1224,11 +1224,14 @@ private void VersionInfo_Click(object sender, EventArgs e)
                 client.DownloadFile(downloadUrl, launcherArchive);
             }
 
-            // Extract using 7zr.exe
-            string sevenZipPath = Path.Combine(Directory.GetCurrentDirectory(), "7zr.exe");
+            // Extract using 7zr.exe in \Bin
+            string sevenZipFolder = Path.Combine(applicationPath, "Bin");
+            Directory.CreateDirectory(sevenZipFolder); // ensure folder exists
+            string sevenZipPath = Path.Combine(sevenZipFolder, "7zr.exe");
+
             if (!File.Exists(sevenZipPath))
             {
-                MessageBox.Show("7zr.exe is missing in the current directory.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("7zr.exe is missing in the Bin folder.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
