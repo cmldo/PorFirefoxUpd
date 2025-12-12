@@ -1262,7 +1262,11 @@ private void VersionInfo_Click(object sender, EventArgs e)
         // Get versions
         Version updVersion = new Version(FileVersionInfo.GetVersionInfo(updaterPath).FileVersion);
         Version launcherVersion = new Version(FileVersionInfo.GetVersionInfo(launcherPath).FileVersion);
-
+    
+        // If called programmatically (sender is null), skip the click logic
+        if (sender == null)
+            return;
+        
         MessageBox.Show($"Updater Version - {updVersion}\r\nLauncher Version - {launcherVersion}",
                         "Version Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
