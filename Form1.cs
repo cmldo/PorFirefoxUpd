@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Globalization;
 using System.Collections.Generic;
-using System.Net.Http;
 
 namespace Firefox_Updater
 {
@@ -168,6 +167,13 @@ namespace Firefox_Updater
             }
             _ = TestCheck();
         }
+        
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            // Call the check on form load
+            Download7zrIfMissing();
+        }
+        
         private async Task TestCheck()
         {
             await CheckUpdate();
@@ -508,7 +514,7 @@ namespace Firefox_Updater
                             (args.TotalBytesToReceive / 1024d / 1024d).ToString("0.00"));
                         percLabel.Text = args.ProgressPercentage.ToString() + "%";
                     };
-                    myWebClient.DownloadFileCompleted += async (o, args) =>
+                    myWebClient.DownloadFileCompleted += (o, args) =>
                     {
                         if (args.Error != null)
                         {
@@ -517,18 +523,13 @@ namespace Firefox_Updater
                         else
                         {
                             downloadLabel.Text = Langfile.Texts("downUnpstart");
-await Ensure7zrAsync();
-
-string exePath = $"{applicationPath}\\Bin\\7zr.exe";
-string arguments = $" x \"{applicationPath}\\Firefox_{ring2[c]}_{buildversion[c]}_{architektur[a]}_{lang[comboIndex]}.exe\" -o\"{applicationPath}\\Update\\{entpDir[b]}\" -y";
-
-Process process = new Process();
-process.StartInfo.FileName = exePath;
-process.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
-process.StartInfo.Arguments = arguments;
-process.Start();
-process.WaitForExit();
-
+                            string arguments = $" x \"{applicationPath}\\Firefox_{ring2[c]}_{buildversion[c]}_{architektur[a]}_{lang[comboIndex]}.exe\" -o\"{applicationPath}\\Update\\{entpDir[b]}\" -y";
+                            Process process = new Process();
+                            process.StartInfo.FileName = $"{applicationPath}\\Bin\\7zr.exe";
+                            process.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
+                            process.StartInfo.Arguments = arguments;
+                            process.Start();
+                            process.WaitForExit();
                             if (File.Exists($"{applicationPath}\\{instDir[b]}\\updates\\Version.log"))
                             {
                                 if (checkBox3.Checked)
@@ -588,21 +589,36 @@ process.WaitForExit();
             }
         }
 
-private async Task Ensure7zrAsync()
-{
-    string sevenZip = Path.Combine(applicationPath, "Bin", "7zr.exe");
+        private void Download7zrIfMissing()
+        {
+            string exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "7zr.exe");
 
-    if (File.Exists(sevenZip))
-        return;
+            if (!File.Exists(exePath))
+            {
+                try
+                {
+                    // Using HttpClient in .NET Framework 4.8
+                    using (var client = new HttpClient())
+                    {
+                        // Synchronously download the file
+                        var response = client.GetAsync("https://www.7-zip.org/a/7zr.exe").Result;
+                        response.EnsureSuccessStatusCode();
+                        byte[] bytes = response.Content.ReadAsByteArrayAsync().Result;
 
-    Directory.CreateDirectory(Path.Combine(applicationPath, "Bin"));
-
-    using (var client = new HttpClient())
-    {
-        var data = await client.GetByteArrayAsync("https://www.7-zip.org/a/7zr.exe");
-        File.WriteAllBytes(sevenZip, data);  // sync version for .NET 4.8
-    }
-}
+                        File.WriteAllBytes(exePath, bytes);
+                        MessageBox.Show("7zr.exe downloaded successfully!", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to download 7zr.exe: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                MessageBox.Show("7zr.exe already exists.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
         
         public void Message1()
         {
