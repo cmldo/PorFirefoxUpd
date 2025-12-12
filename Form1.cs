@@ -516,13 +516,18 @@ namespace Firefox_Updater
                         else
                         {
                             downloadLabel.Text = Langfile.Texts("downUnpstart");
-                            string arguments = $" x \"{applicationPath}\\Firefox_{ring2[c]}_{buildversion[c]}_{architektur[a]}_{lang[comboIndex]}.exe\" -o\"{applicationPath}\\Update\\{entpDir[b]}\" -y";
-                            Process process = new Process();
-                            process.StartInfo.FileName = $"{applicationPath}\\Bin\\7zr.exe";
-                            process.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
-                            process.StartInfo.Arguments = arguments;
-                            process.Start();
-                            process.WaitForExit();
+await Ensure7zrAsync();
+
+string exePath = $"{applicationPath}\\Bin\\7zr.exe";
+string arguments = $" x \"{applicationPath}\\Firefox_{ring2[c]}_{buildversion[c]}_{architektur[a]}_{lang[comboIndex]}.exe\" -o\"{applicationPath}\\Update\\{entpDir[b]}\" -y";
+
+Process process = new Process();
+process.StartInfo.FileName = exePath;
+process.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
+process.StartInfo.Arguments = arguments;
+process.Start();
+process.WaitForExit();
+
                             if (File.Exists($"{applicationPath}\\{instDir[b]}\\updates\\Version.log"))
                             {
                                 if (checkBox3.Checked)
@@ -581,6 +586,23 @@ namespace Firefox_Updater
                 Controls.Remove(progressBox);
             }
         }
+
+private async Task Ensure7zrAsync()
+{
+    string sevenZip = Path.Combine(applicationPath, "Bin", "7zr.exe");
+
+    if (File.Exists(sevenZip))
+        return;
+
+    Directory.CreateDirectory(Path.Combine(applicationPath, "Bin"));
+
+    using (var client = new HttpClient())
+    {
+        var data = await client.GetByteArrayAsync("https://www.7-zip.org/a/7zr.exe");
+        await File.WriteAllBytesAsync(sevenZip, data);
+    }
+}
+        
         public void Message1()
         {
             MessageBox.Show(Langfile.Texts("MeassageVersion"), "Portabel Firefox Updater", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
